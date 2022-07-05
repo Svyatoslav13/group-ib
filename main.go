@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -34,6 +35,7 @@ func main() {
 }
 
 type Broker struct {
+	sync.Mutex
 	queues map[string]chan string
 }
 
@@ -64,7 +66,10 @@ func (b *Broker) PutMessage(queueName string, value string) bool {
 }
 
 func (b *Broker) getQueue(name string) chan string {
+	b.Lock()
 	queue, found := b.queues[name]
+	b.Unlock()
+
 	if !found {
 		queue = make(chan string, 100)
 		b.queues[name] = queue
