@@ -52,9 +52,15 @@ func (b *Broker) GetMessage(queueName string, timeout time.Duration) (string, er
 	}
 }
 
-func (b *Broker) PutMessage(queueName string, value string) {
+func (b *Broker) PutMessage(queueName string, value string) bool {
 	queue := b.getQueue(queueName)
-	queue <- value
+
+	select {
+	case queue <- value:
+		return true
+	default:
+		return false
+	}
 }
 
 func (b *Broker) getQueue(name string) chan string {
@@ -83,7 +89,7 @@ func queueHandler(broker *Broker) http.Handler {
 				return
 			}
 
-			broker.PutMessage(queueName, value)
+			_ = broker.PutMessage(queueName, value)
 			rw.WriteHeader(http.StatusOK)
 		case "GET":
 			timeout := validateTimeout(r.URL.Query().Get("timeout"))
