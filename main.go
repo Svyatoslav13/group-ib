@@ -35,7 +35,7 @@ func main() {
 }
 
 type Broker struct {
-	sync.Mutex
+	sync.RWMutex
 	queues map[string]chan string
 }
 
@@ -66,9 +66,9 @@ func (b *Broker) PutMessage(queueName string, value string) bool {
 }
 
 func (b *Broker) getQueue(name string) chan string {
-	b.Lock()
+	b.RLock()
+	defer b.RUnlock()
 	queue, found := b.queues[name]
-	b.Unlock()
 
 	if !found {
 		queue = make(chan string, 100)
